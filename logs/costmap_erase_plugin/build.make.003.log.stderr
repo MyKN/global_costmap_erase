@@ -1,7 +1,0 @@
-[01m[K/home/muhammedyasin/catkin_ws/src/costmap_erase_plugin/src/costmap_erase_plugin.cpp:[m[K In member function ‘[01m[Kvirtual void costmap_2d::CostmapErasePlugin::onInitialize()[m[K’:
-[01m[K/home/muhammedyasin/catkin_ws/src/costmap_erase_plugin/src/costmap_erase_plugin.cpp:24:5:[m[K [01;31m[Kerror: [m[K‘[01m[Klaser_scan_sub_[m[K’ was not declared in this scope
-   24 |     [01;31m[Klaser_scan_sub_[m[K = nh.subscribe("/scan", 1, &CostmapErasePlugin::laserScanCallback, this);
-      |     [01;31m[K^~~~~~~~~~~~~~~[m[K
-make[2]: *** [CMakeFiles/costmap_erase_plugin.dir/build.make:63: CMakeFiles/costmap_erase_plugin.dir/src/costmap_erase_plugin.cpp.o] Error 1
-make[1]: *** [CMakeFiles/Makefile2:285: CMakeFiles/costmap_erase_plugin.dir/all] Error 2
-make: *** [Makefile:141: all] Error 2
