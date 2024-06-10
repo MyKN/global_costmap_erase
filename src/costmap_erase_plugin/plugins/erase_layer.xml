@@ -1,0 +1,5 @@
+<library path="lib/libcostmap_erase_plugin">
+  <class name="costmap_2d::CostmapErasePlugin" type="costmap_2d::CostmapErasePlugin" base_class_type="costmap_2d::Layer">
+    <description>A layer to erase costmap outside a specified radius</description>
+  </class>
+</library>
