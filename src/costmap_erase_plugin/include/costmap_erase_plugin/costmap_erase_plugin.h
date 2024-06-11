@@ -9,14 +9,21 @@
 #include <nav_msgs/Odometry.h>
 #include <dynamic_reconfigure/server.h>
 #include <costmap_2d/GenericPluginConfig.h>
+#include <map>
+#include <tf/transform_listener.h>
+
 
 namespace costmap_2d
 {
+  struct ObjectData {
+    ros::Time last_seen;
+    float x, y;  // Nesnenin son bilinen koordinatları
+  };
+
   class CostmapErasePlugin : public ObstacleLayer
   {
   public:
     CostmapErasePlugin();
-
     virtual void onInitialize();
     virtual void updateBounds(double robot_x, double robot_y, double robot_yaw, double* min_x, double* min_y, double* max_x, double* max_y);
     virtual void updateCosts(Costmap2D& master_grid, int min_i, int min_j, int max_i, int max_j);
@@ -25,7 +32,9 @@ namespace costmap_2d
     void clearCostmapCallback(const std_msgs::Empty& msg);
     void odomCallback(const nav_msgs::Odometry::ConstPtr& msg);
     void laserScanCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
+    void checkObjectPersistence();
 
+    int identifyObject(double x, double y);  // Nesne tanımlama fonksiyonu
 
 
     bool clear_obstacles_;
@@ -33,13 +42,16 @@ namespace costmap_2d
     double robot_x_;
     double robot_y_;
     double observation_persistence_;
-    double tolerance_;  // Tolerans değişkeni
+    double tolerance_;
+
+    tf::TransformListener tf_listener_;
 
 
     ros::Subscriber clear_costmap_sub_;
     ros::Subscriber odom_sub_;
     ros::Subscriber laser_scan_sub_;
 
+    std::map<int, ObjectData> observed_objects;  // ID'ye göre nesne takibi
     std::vector<float> previous_scan_;
     std::vector<float> current_scan_;
   };
