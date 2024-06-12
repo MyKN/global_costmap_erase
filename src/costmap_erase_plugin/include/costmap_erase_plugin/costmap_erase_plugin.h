@@ -29,7 +29,7 @@ namespace costmap_2d
     virtual void updateCosts(Costmap2D& master_grid, int min_i, int min_j, int max_i, int max_j);
 
   private:
-    void clearCostmapCallback(const std_msgs::Empty& msg);
+    //void clearCostmapCallback(const std_msgs::Empty& msg);
     void odomCallback(const nav_msgs::Odometry::ConstPtr& msg);
     void laserScanCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
     void checkObjectPersistence();
