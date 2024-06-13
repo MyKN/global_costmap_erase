@@ -12,7 +12,6 @@
 #include <map>
 #include <tf/transform_listener.h>
 
-
 namespace costmap_2d
 {
   struct ObjectData {
@@ -29,13 +28,9 @@ namespace costmap_2d
     virtual void updateCosts(Costmap2D& master_grid, int min_i, int min_j, int max_i, int max_j);
 
   private:
-    //void clearCostmapCallback(const std_msgs::Empty& msg);
     void odomCallback(const nav_msgs::Odometry::ConstPtr& msg);
     void laserScanCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
     void checkObjectPersistence();
-
-    int identifyObject(double x, double y);  // Nesne tanımlama fonksiyonu
-
 
     bool clear_obstacles_;
     double erase_radius_;
@@ -46,14 +41,11 @@ namespace costmap_2d
 
     tf::TransformListener tf_listener_;
 
-
     ros::Subscriber clear_costmap_sub_;
     ros::Subscriber odom_sub_;
     ros::Subscriber laser_scan_sub_;
 
-    std::map<int, ObjectData> observed_objects;  // ID'ye göre nesne takibi
-    std::vector<float> previous_scan_;
-    std::vector<float> current_scan_;
+    std::map<std::pair<float, float>, ObjectData> observed_objects;  // Nesne koordinatlarına göre nesne takibi
   };
 } // end namespace costmap_2d
 

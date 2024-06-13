@@ -31,25 +31,21 @@ namespace costmap_2d {
   }
 
   void CostmapErasePlugin::updateCosts(Costmap2D& master_grid, int min_i, int min_j, int max_i, int max_j) {
-    checkObjectPersistence(); // Nesnelerin varlığını kontrol et ve gerekli olanları sil
+    checkObjectPersistence(); // Obstacle varlığını kontrol et ve gerekli olanları sil
     ros::Time now = ros::Time::now(); 
-    for (auto& obj : observed_objects) {
+    for (const auto& obj : observed_objects) {
         unsigned int mx, my;
-        if (master_grid.worldToMap(obj.second.x, obj.second.y, mx, my)) {
-            double distance = std::hypot(obj.second.x - robot_x_, obj.second.y - robot_y_);
-            // Nesne 2 metre çap içinde ise engel olarak işaretle
-            // If object is in there 2-meteres of Robot radius, Define as a obstacle
+        if (master_grid.worldToMap(obj.first.first, obj.first.second, mx, my)) {
+            double distance = std::hypot(obj.first.first - robot_x_, obj.first.second - robot_y_);
+            // Nesne 2 metre çap içinde ise engel olarak tanı
             if (distance <= erase_radius_) {
                 master_grid.setCost(mx, my, costmap_2d::LETHAL_OBSTACLE);
-            } else if (distance > erase_radius_) {
-                // Nesne 2 metre çap dışında ise serbest alan olarak işaretle
-                // If object is not in there 2-meteres of Robot radius, define it's location as a FREE SPACE 
+            } else {
                 master_grid.setCost(mx, my, costmap_2d::FREE_SPACE);
             }
         }
     }
     // Static layer'ı bozmadan haritanın tamamını güncelle
-    // Updating all of map while protecting Static Layer 
     ObstacleLayer::updateCosts(master_grid, min_i, min_j, max_i, max_j);
   }
 
@@ -59,31 +55,25 @@ namespace costmap_2d {
 
     try {
         // LaserScan verilerini harita çerçevesine dönüştür
-        // Converting Laser Scan data while transforming base to base
         tf_listener_.waitForTransform("map", scan->header.frame_id, scan->header.stamp, ros::Duration(1.0));
         projector_.transformLaserScanToPointCloud("map", *scan, cloud, tf_listener_);
-        } 
-    catch (tf::TransformException &ex) 
-    {
+    } catch (tf::TransformException &ex) {
         ROS_ERROR("Error transforming laser scan into the map frame: %s", ex.what());
         return;
     }
 
     // Tanımlanan nesneyi obstacle ya da değil olarak güncelle
-    // Updating information of object as obstacle or not
-    for (const auto& point : cloud.points) {
-        double ox = point.x;
-        double oy = point.y;
-        int object_id = identifyObject(ox, oy);
-        // Nesnenin son görülme zamanını ve konumunu güncelle
-        // Updating last seen and position for object
-        observed_objects[object_id] = {ros::Time::now(), ox, oy};
+    for (size_t i = 0; i < cloud.points.size(); ++i) {
+        float ox = static_cast<float>(cloud.points[i].x);
+        float oy = static_cast<float>(cloud.points[i].y);
+        ObjectData data = {ros::Time::now(), ox, oy};
+        std::pair<float, float> key = std::make_pair(ox, oy);
+        observed_objects[key] = data;
     }
   }
 
   void CostmapErasePlugin::odomCallback(const nav_msgs::Odometry::ConstPtr& msg) {
     // Robotun anlık konumunu al
-    // Take robot position at at that time
     robot_x_ = msg->pose.pose.position.x;
     robot_y_ = msg->pose.pose.position.y;
   }
@@ -91,20 +81,13 @@ namespace costmap_2d {
   void CostmapErasePlugin::checkObjectPersistence() {
     auto now = ros::Time::now(); 
     for (auto it = observed_objects.begin(); it != observed_objects.end();) {
-        double distance = std::hypot(it->second.x - robot_x_, it->second.y - robot_y_);
+        double distance = std::hypot(it->first.first - robot_x_, it->first.second - robot_y_);
         // Nesne 2 metre çapı dışında ise sil
-        if (distance > erase_radius_) {
+        if (distance > erase_radius_ && (now - it->second.last_seen).toSec() > observation_persistence_) {
             it = observed_objects.erase(it);
         } else {
             ++it;
         }
     }
-  }
-
-  int CostmapErasePlugin::identifyObject(double x, double y) {
-    static int id = 0;
-    return id++;  
-    // Basit bir ID atanması
-    // Determine simple ID that is unique
   }
 } // end namespace costmap_2d
