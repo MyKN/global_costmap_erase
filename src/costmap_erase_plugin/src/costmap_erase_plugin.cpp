@@ -8,7 +8,7 @@
 #include <laser_geometry/laser_geometry.h>
 
 #include <ros/ros.h>
-#include <vector>
+#include <unordered_map>
 
 PLUGINLIB_EXPORT_CLASS(costmap_2d::CostmapErasePlugin, costmap_2d::Layer)
 
@@ -31,16 +31,16 @@ namespace costmap_2d {
   }
 
   void CostmapErasePlugin::updateCosts(Costmap2D& master_grid, int min_i, int min_j, int max_i, int max_j) {
-    checkObjectPersistence(); // Obstacle varlığını kontrol et ve gerekli olanları sil
-    ros::Time now = ros::Time::now(); 
+    checkObjectPersistence(); // Nesnelerin varlığını kontrol et ve gerekli olanları sil
     for (const auto& obj : observed_objects) {
         unsigned int mx, my;
-        if (master_grid.worldToMap(obj.first.first, obj.first.second, mx, my)) {
-            double distance = std::hypot(obj.first.first - robot_x_, obj.first.second - robot_y_);
-            // Nesne 2 metre çap içinde ise engel olarak tanı
+        if (master_grid.worldToMap(obj.second.x, obj.second.y, mx, my)) {
+            double distance = std::hypot(obj.second.x - robot_x_, obj.second.y - robot_y_);
+            // Nesne 2 metre çap içinde ise engel olarak işaretle
             if (distance <= erase_radius_) {
                 master_grid.setCost(mx, my, costmap_2d::LETHAL_OBSTACLE);
             } else {
+                // Nesne 2 metre çap dışında ise serbest alan olarak işaretle
                 master_grid.setCost(mx, my, costmap_2d::FREE_SPACE);
             }
         }
@@ -57,18 +57,18 @@ namespace costmap_2d {
         // LaserScan verilerini harita çerçevesine dönüştür
         tf_listener_.waitForTransform("map", scan->header.frame_id, scan->header.stamp, ros::Duration(1.0));
         projector_.transformLaserScanToPointCloud("map", *scan, cloud, tf_listener_);
-    } catch (tf::TransformException &ex) {
+    } 
+    catch (tf::TransformException &ex) 
+    {
         ROS_ERROR("Error transforming laser scan into the map frame: %s", ex.what());
         return;
     }
 
     // Tanımlanan nesneyi obstacle ya da değil olarak güncelle
-    for (size_t i = 0; i < cloud.points.size(); ++i) {
-        float ox = static_cast<float>(cloud.points[i].x);
-        float oy = static_cast<float>(cloud.points[i].y);
-        ObjectData data = {ros::Time::now(), ox, oy};
-        std::pair<float, float> key = std::make_pair(ox, oy);
-        observed_objects[key] = data;
+    for (const auto& point : cloud.points) {
+        double ox = point.x;
+        double oy = point.y;
+        observed_objects[{ox, oy}] = {ros::Time::now(), ox, oy};
     }
   }
 
@@ -81,9 +81,9 @@ namespace costmap_2d {
   void CostmapErasePlugin::checkObjectPersistence() {
     auto now = ros::Time::now(); 
     for (auto it = observed_objects.begin(); it != observed_objects.end();) {
-        double distance = std::hypot(it->first.first - robot_x_, it->first.second - robot_y_);
+        double distance = std::hypot(it->second.x - robot_x_, it->second.y - robot_y_);
         // Nesne 2 metre çapı dışında ise sil
-        if (distance > erase_radius_ && (now - it->second.last_seen).toSec() > observation_persistence_) {
+        if (distance > erase_radius_) {
             it = observed_objects.erase(it);
         } else {
             ++it;

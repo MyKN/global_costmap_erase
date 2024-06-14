@@ -1,36 +1,46 @@
-#ifndef COSTMAP_ERASE_PLUGIN_H_
-#define COSTMAP_ERASE_PLUGIN_H_
+#ifndef COSTMAP_ERASE_PLUGIN_H
+#define COSTMAP_ERASE_PLUGIN_H
 
-#include <ros/ros.h>
 #include <costmap_2d/layer.h>
 #include <costmap_2d/layered_costmap.h>
+#include <costmap_2d/costmap_layer.h>
 #include <costmap_2d/obstacle_layer.h>
-#include <std_msgs/Empty.h>
-#include <nav_msgs/Odometry.h>
-#include <dynamic_reconfigure/server.h>
-#include <costmap_2d/GenericPluginConfig.h>
-#include <map>
+#include <ros/ros.h>
 #include <tf/transform_listener.h>
+#include <nav_msgs/Odometry.h>
+#include <sensor_msgs/LaserScan.h>
+#include <unordered_map>
+#include <utility>
 
-namespace costmap_2d
-{
-  struct ObjectData {
-    ros::Time last_seen;
-    float x, y;  // Nesnenin son bilinen koordinatları
-  };
+// Özel hash fonksiyonunu tanımlayalım
+namespace std {
+    template <>
+    struct hash<std::pair<double, double>> {
+        size_t operator()(const std::pair<double, double>& p) const {
+            auto hash1 = std::hash<double>{}(p.first);
+            auto hash2 = std::hash<double>{}(p.second);
+            return hash1 ^ hash2; // Basit bir XOR kombinasyonu kullanıyoruz
+        }
+    };
+}
 
-  class CostmapErasePlugin : public ObstacleLayer
-  {
-  public:
+namespace costmap_2d {
+
+class CostmapErasePlugin : public ObstacleLayer {
+public:
     CostmapErasePlugin();
     virtual void onInitialize();
     virtual void updateBounds(double robot_x, double robot_y, double robot_yaw, double* min_x, double* min_y, double* max_x, double* max_y);
     virtual void updateCosts(Costmap2D& master_grid, int min_i, int min_j, int max_i, int max_j);
 
-  private:
-    void odomCallback(const nav_msgs::Odometry::ConstPtr& msg);
+private:
     void laserScanCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
+    void odomCallback(const nav_msgs::Odometry::ConstPtr& msg);
     void checkObjectPersistence();
+
+    ros::Subscriber odom_sub_;
+    ros::Subscriber laser_scan_sub_;
+    tf::TransformListener tf_listener_;
 
     bool clear_obstacles_;
     double erase_radius_;
@@ -39,14 +49,14 @@ namespace costmap_2d
     double observation_persistence_;
     double tolerance_;
 
-    tf::TransformListener tf_listener_;
+    struct Object {
+        ros::Time last_seen;
+        double x, y;
+    };
+    
+    std::unordered_map<std::pair<double, double>, Object> observed_objects;
+};
 
-    ros::Subscriber clear_costmap_sub_;
-    ros::Subscriber odom_sub_;
-    ros::Subscriber laser_scan_sub_;
-
-    std::map<std::pair<float, float>, ObjectData> observed_objects;  // Nesne koordinatlarına göre nesne takibi
-  };
 } // end namespace costmap_2d
 
-#endif // COSTMAP_ERASE_PLUGIN_H_
+#endif // COSTMAP_ERASE_PLUGIN_H
