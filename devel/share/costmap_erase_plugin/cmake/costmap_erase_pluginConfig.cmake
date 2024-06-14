@@ -1,1 +1,0 @@
-/home/muhammedyasin/catkin_ws/devel/.private/costmap_erase_plugin/share/costmap_erase_plugin/cmake/costmap_erase_pluginConfig.cmake
