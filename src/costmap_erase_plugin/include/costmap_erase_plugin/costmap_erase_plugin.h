@@ -9,20 +9,9 @@
 #include <tf/transform_listener.h>
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/LaserScan.h>
-#include <unordered_map>
+#include <map>
 #include <utility>
 
-// Özel hash fonksiyonunu tanımlayalım
-namespace std {
-    template <>
-    struct hash<std::pair<double, double>> {
-        size_t operator()(const std::pair<double, double>& p) const {
-            auto hash1 = std::hash<double>{}(p.first);
-            auto hash2 = std::hash<double>{}(p.second);
-            return hash1 ^ hash2; // Basit bir XOR kombinasyonu kullanıyoruz
-        }
-    };
-}
 
 namespace costmap_2d {
 
@@ -36,25 +25,32 @@ public:
 private:
     void laserScanCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
     void odomCallback(const nav_msgs::Odometry::ConstPtr& msg);
-    void checkObjectPersistence();
+    void checkObjectPersistence();  
 
-    ros::Subscriber odom_sub_;
-    ros::Subscriber laser_scan_sub_;
-    tf::TransformListener tf_listener_;
+    ros::Subscriber odom_sub_;           
+    ros::Subscriber laser_scan_sub_;     
+    tf::TransformListener tf_listener_;  
 
-    bool clear_obstacles_;
+    bool clear_obstacles_; 
+
     double erase_radius_;
-    double robot_x_;
-    double robot_y_;
-    double observation_persistence_;
-    double tolerance_;
+    double robot_x_;       
+    double robot_y_;       
+    
+    double object_persistence_time_; // Object persistence time, 
+    double tolerance_;  
+    // Tolerance value, this parameter was created for laser scan data, because data comes as differently each other. 
+    // Therefore, just coming data from specific range can be acceptable as a obstacle.
 
+ 
     struct Object {
-        ros::Time last_seen;
-        double x, y;
+        ros::Time last_seen;  // Last seen time
+        double x, y;          // Position of the object
     };
     
-    std::unordered_map<std::pair<double, double>, Object> observed_objects;
+
+    // Map of observed objects, this function holds obstacle values in there
+    std::map<std::pair<double, double>, Object> observed_objects;
 };
 
 } // end namespace costmap_2d

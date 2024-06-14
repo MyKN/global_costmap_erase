@@ -1,0 +1,8 @@
+prefix=/home/muhammedyasin/catkin_ws/install
+
+Name: costmap_erase_plugin
+Description: Description of costmap_erase_plugin
+Version: 0.0.0
+Cflags: -I${prefix}/include
+Libs: -L${prefix}/lib -lcostmap_erase_plugin
+Requires: costmap_2d pluginlib roscpp nav_msgs std_msgs
