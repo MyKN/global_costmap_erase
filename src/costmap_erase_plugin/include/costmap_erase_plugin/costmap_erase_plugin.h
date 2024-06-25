@@ -12,7 +12,6 @@
 #include <map>
 #include <utility>
 
-
 namespace costmap_2d {
 
 class CostmapErasePlugin : public ObstacleLayer {
@@ -25,32 +24,22 @@ public:
 private:
     void laserScanCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
     void odomCallback(const nav_msgs::Odometry::ConstPtr& msg);
-    void checkObjectPersistence();  
+    void checkObjectPersistence();
 
-    ros::Subscriber odom_sub_;           
-    ros::Subscriber laser_scan_sub_;     
-    tf::TransformListener tf_listener_;  
+    ros::Subscriber odom_sub_;
+    ros::Subscriber laser_scan_sub_;
+    tf::TransformListener tf_listener_;
 
-    bool clear_obstacles_; 
+    bool clear_obstacles_;
 
     double erase_radius_;
-    double robot_x_;       
-    double robot_y_;       
+    double robot_x_;
+    double robot_y_;
+    double tolerance_;
+    double object_persistence_time_;
     
-    double object_persistence_time_; // Object persistence time, 
-    double tolerance_;  
-    // Tolerance value, this parameter was created for laser scan data, because data comes as differently each other. 
-    // Therefore, just coming data from specific range can be acceptable as a obstacle.
-
- 
-    struct Object {
-        ros::Time last_seen;  // Last seen time
-        double x, y;          // Position of the object
-    };
     
-
-    // Map of observed objects, this function holds obstacle values in there
-    std::map<std::pair<double, double>, Object> observed_objects;
+    std::map<std::pair<unsigned int, unsigned int>, ros::Time> observed_objects;
 };
 
 } // end namespace costmap_2d
