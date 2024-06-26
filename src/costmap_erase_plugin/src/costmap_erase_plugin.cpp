@@ -31,7 +31,10 @@ namespace costmap_2d {
 
   void CostmapErasePlugin::updateCosts(Costmap2D& master_grid, int min_i, int min_j, int max_i, int max_j) {
     auto now = ros::Time::now();
-    //ROS_INFO("Observed objects map size before UPDATECOST 1: %lu", observed_objects.size());
+    ROS_INFO("Observed objects map size before UPDATECOST 1: %lu", observed_objects.size());
+
+    bool sayacFlag = true;
+
 
     for (auto it = observed_objects.begin(); it != observed_objects.end();) {
         unsigned int mx, my;
@@ -54,12 +57,17 @@ namespace costmap_2d {
                 master_grid.setCost(mx, my, costmap_2d::LETHAL_OBSTACLE);
             }
             ++it;
-        }
+        } 
     }
+    
 
     // Static layer'ı bozmadan haritanın tamamını güncelley
     // Update map without static layer
+
     ObstacleLayer::updateCosts(master_grid, min_i, min_j, max_i, max_j);
+
+
+
     //ROS_INFO("Observed objects map size after UPDATECOST 2: %lu", observed_objects.size());
   }
 
