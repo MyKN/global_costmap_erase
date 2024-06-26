@@ -31,18 +31,21 @@ namespace costmap_2d {
 
   void CostmapErasePlugin::updateCosts(Costmap2D& master_grid, int min_i, int min_j, int max_i, int max_j) {
     auto now = ros::Time::now();
-    ROS_INFO("Observed objects map size before UPDATECOST 1: %lu", observed_objects.size());
+    //ROS_INFO("Observed objects map size before UPDATECOST 1: %lu", observed_objects.size());
 
     for (auto it = observed_objects.begin(); it != observed_objects.end();) {
-        unsigned int mx = it->first.first;
-        unsigned int my = it->first.second;
+        unsigned int mx, my;
+        mx = it->first.first;
+        my = it->first.second;
+        
         double wx, wy;
         master_grid.mapToWorld(mx, my, wx, wy);
+        
         double distance = std::hypot(wx - robot_x_, wy - robot_y_);
 
         // Nesne 2 metre çapı dışında ve gözlemlenme süresi dolunca sil
         // Object was stayed out of radius, update it after persistence time
-        if (distance > erase_radius_ && (now - it->second).toSec() > 2.0) {
+        if (distance > erase_radius_ && (now - it->second).toSec() > 5.0) {
             it = observed_objects.erase(it);
         } else {
             // Nesne 2 metre çapı içinde ise engel olarak işaretle
