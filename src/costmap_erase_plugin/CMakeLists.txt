@@ -30,6 +30,3 @@ target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
 )
 
-install(PROGRAMS scripts/clear_costmap_timer_node.py
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)

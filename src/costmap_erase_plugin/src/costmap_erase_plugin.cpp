@@ -13,7 +13,7 @@
 PLUGINLIB_EXPORT_CLASS(costmap_2d::CostmapErasePlugin, costmap_2d::Layer)
 
 namespace costmap_2d {
-  CostmapErasePlugin::CostmapErasePlugin() : clear_obstacles_(true), erase_radius_(2.0), robot_x_(0.0), robot_y_(0.0), tolerance_(1.0), object_persistence_time_(5.0) {
+  CostmapErasePlugin::CostmapErasePlugin() : clear_obstacles_(true), erase_radius_(2.0), robot_x_(0.0), robot_y_(0.0), tolerance_(1.0), object_persistence_time_(2.0) {
     
     ros::NodeHandle nh("~/" + name_);
 
@@ -30,46 +30,38 @@ namespace costmap_2d {
   }
 
   void CostmapErasePlugin::updateCosts(Costmap2D& master_grid, int min_i, int min_j, int max_i, int max_j) {
-    auto now = ros::Time::now();
-    ROS_INFO("Observed objects map size before UPDATECOST 1: %lu", observed_objects.size());
+      auto now = ros::Time::now();
+      //ROS_INFO("Observed objects map size before UPDATECOST 1: %lu", observed_objects.size());
 
-    bool sayacFlag = true;
+      for (auto it = observed_objects.begin(); it != observed_objects.end();) {
+          unsigned int mx, my;
 
-
-    for (auto it = observed_objects.begin(); it != observed_objects.end();) {
-        unsigned int mx, my;
-        mx = it->first.first;
-        my = it->first.second;
-        
-        double wx, wy;
-        master_grid.mapToWorld(mx, my, wx, wy);
-        
-        double distance = std::hypot(wx - robot_x_, wy - robot_y_);
+          mx = it->first.first;
+          my = it->first.second;
+          
+          double wx, wy;
+          master_grid.mapToWorld(mx, my, wx, wy);
+          double distance = std::hypot(wx - robot_x_, wy - robot_y_);
 
         // Nesne 2 metre çapı dışında ve gözlemlenme süresi dolunca sil
         // Object was stayed out of radius, update it after persistence time
-        if (distance > erase_radius_ && (now - it->second).toSec() > 5.0) {
-            it = observed_objects.erase(it);
-        } else {
-            // Nesne 2 metre çapı içinde ise engel olarak işaretle
+          if (distance > erase_radius_ && (now - it->second).toSec() > object_persistence_time_) {
+              master_grid.setCost(mx, my, costmap_2d::FREE_SPACE);
+              it = observed_objects.erase(it);
+          } else {
+            // Nesne 2 metre çapı içinde ise engel olarak tut
             // If object stays in 2 metres radius of robot, define it as Obstacle
-            if (distance <= erase_radius_) {
-                master_grid.setCost(mx, my, costmap_2d::LETHAL_OBSTACLE);
-            }
-            ++it;
-        } 
-    }
-    
+              master_grid.setCost(mx, my, costmap_2d::LETHAL_OBSTACLE);
+              ++it;
+          }
+      }
 
-    // Static layer'ı bozmadan haritanın tamamını güncelley
-    // Update map without static layer
+      //ROS_INFO("Observed objects map size after UPDATECOST 2: %lu", observed_objects.size());
 
-    ObstacleLayer::updateCosts(master_grid, min_i, min_j, max_i, max_j);
-
-
-
-    //ROS_INFO("Observed objects map size after UPDATECOST 2: %lu", observed_objects.size());
+      // ROS_INFO was wrote for observing size of map vector 
+      // ROS_INFO map vektörünün durumunu kontrol etmek için yazıldı
   }
+
 
   void CostmapErasePlugin::laserScanCallback(const sensor_msgs::LaserScan::ConstPtr& scan) {
     laser_geometry::LaserProjection projector_;
