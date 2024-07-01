@@ -1,3 +1,4 @@
+
 # Global Costmap Erase Plugin for TurtleBot3
 
 This repository contains a plugin developed for use with the TurtleBot3 project. The plugin is designed to update and manage obstacles in the global costmap that are outside a 2-meter radius from the robot.
@@ -27,20 +28,19 @@ This repository contains a plugin developed for use with the TurtleBot3 project.
    echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc
    source ~/.bashrc
    sudo apt install python3-rosinstall python3-rosinstall-generator python3-wstool build-essential
-2. **Setup Sources and Install Turtlebot3:**
+   ```
+
+2. **Setup Sources and Install TurtleBot3:**
    ```sh
    sudo apt install ros-noetic-turtlebot3
    sudo apt install ros-noetic-turtlebot3-simulations
    echo "export TURTLEBOT3_MODEL=burger" >> ~/.bashrc
    source ~/.bashrc
+   ```
 
-3. **For More Detail Information:**
-   ```sh
-   https://wiki.ros.org/noetic/Installation/Ubuntu
-   https://emanual.robotis.com/docs/en/platform/turtlebot3/quick-start/
-   
-
-   
+3. **For More Detailed Information:**
+   - [ROS Noetic Installation](https://wiki.ros.org/noetic/Installation/Ubuntu)
+   - [TurtleBot3 Quick Start](https://emanual.robotis.com/docs/en/platform/turtlebot3/quick-start/)
 
 ## Configuration
 
@@ -51,29 +51,27 @@ global_costmap:
   global_frame: map
   robot_base_frame: base_link
 
-  update_frequency: 10.0  # 3 seconds = 0.33 Hz
-  publish_frequency: 1.0
+  update_frequency: 10.0
+  publish_frequency: 0.5
   transform_tolerance: 0.5
 
   static_map: true
-  rolling_window: false  # true
+  rolling_window: false
 
   plugins:
     - {name: static_layer, type: "costmap_2d::StaticLayer"}
     - {name: costmap_erase_layer, type: "costmap_2d::CostmapErasePlugin"}
-    #- {name: obstacle_layer, type: "costmap_2d::ObstacleLayer"}
     - {name: inflation_layer, type: "costmap_2d::InflationLayer"}
 
-  obstacle_layer:
-    global_frame: odom
+  costmap_erase_layer:
+    global_frame: map
     robot_base_frame: base_link
-    static_map: true
-    rolling_window: false  # true
+    rolling_window: false
     width: 10.0
-    weight: 10.0
+    height: 10.0
     resolution: 0.05
     enabled: true
-    map_type: costmap
+    erase_radius: 2.0
     observation_sources: scan
     scan:
       sensor_frame: base_scan
@@ -81,14 +79,48 @@ global_costmap:
       topic: /scan
       marking: true
       clearing: true
-      #observation_persistence: 5.0  # Obstacle persistence time
+
+  inflation_layer:
+    enabled: true
+    inflation_radius: 0.55
+    cost_scaling_factor: 10.0
+    track_unknown_space: true
+    lethal_cost: 253
+    inflate_unknown: true
+```
+
+The `local_costmap.params` file is configured as follows:
+
+```yaml
+local_costmap:
+  global_frame: odom
+  robot_base_frame: base_footprint
+
+  update_frequency: 5.0
+  publish_frequency: 5.0
+  transform_tolerance: 0.5  
+
+  static_map: true  
+  rolling_window: true
+  width: 3
+  height: 3
+  resolution: 0.05
+  
+  plugins:
+    - {name: static_layer, type: "costmap_2d::StaticLayer"}
+    - {name: costmap_erase_layer, type: "costmap_2d::CostmapErasePlugin"}
+    - {name: inflation_layer, type: "costmap_2d::InflationLayer"}
+
+  static_layer:
+    global_frame: map
+    enabled: true
 
   costmap_erase_layer:
     global_frame: odom
     robot_base_frame: base_link
-    rolling_window: false  # true
-    width: 10.0
-    weight: 10.0
+    rolling_window: false
+    width: 3.0
+    height: 3.0
     resolution: 0.05
     map_type: costmap
     enabled: true
@@ -100,12 +132,11 @@ global_costmap:
       topic: /scan
       marking: true
       clearing: true
-      #observation_persistence: 5.0  # Obstacle persistence time
 
   inflation_layer:
     enabled: true
-    inflation_radius: 2.0
-    cost_scaling_factor: 2.0
+    inflation_radius: 1.0
+    cost_scaling_factor: 10.0
     map_type: costmap
     observation_sources: scan
     scan:
@@ -116,7 +147,5 @@ global_costmap:
       clearing: true
 
   static_layer:
-    global_frame: map
     enabled: true
-
-  always_send_full_costmap: True
+```
