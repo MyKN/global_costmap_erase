@@ -90,5 +90,66 @@ global_costmap:
     inflate_unknown: true
 
 
+The `local_costmap.params` file is configured as follows:
+
+```yaml
+
+
+local_costmap:
+  global_frame: odom
+  robot_base_frame: base_footprint
+
+  update_frequency: 5.0
+  publish_frequency: 5.0
+  transform_tolerance: 0.5  
+
+  static_map: true  
+  rolling_window: true
+  width: 3
+  height: 3
+  resolution: 0.05
+  
+  plugins:
+    - {name: static_layer, type: "costmap_2d::StaticLayer"}
+    - {name: costmap_erase_layer, type: "costmap_2d::CostmapErasePlugin"}
+    - {name: inflation_layer, type: "costmap_2d::InflationLayer"}
+
+  static_layer:
+    global_frame: map
+    enabled: true
+
+  costmap_erase_layer:
+    global_frame: odom
+    robot_base_frame: base_link
+    rolling_window: false
+    width: 3.0
+    height: 3.0
+    resolution: 0.05
+    map_type: costmap
+    enabled: true
+    erase_radius: 2.0
+    observation_sources: scan
+    scan:
+      sensor_frame: base_scan
+      data_type: LaserScan
+      topic: /scan
+      marking: true
+      clearing: true
+
+  inflation_layer:
+    enabled: true
+    inflation_radius: 1.0
+    cost_scaling_factor: 10.0
+    map_type: costmap
+    observation_sources: scan
+    scan:
+      sensor_frame: base_scan
+      data_type: LaserScan
+      topic: /scan
+      marking: true
+      clearing: true
+
+
+
   static_layer:
     enabled: true
