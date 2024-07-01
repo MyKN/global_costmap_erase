@@ -35,7 +35,7 @@ namespace costmap_2d
         void initializeStaticCells();
 
         std::vector<std::pair<unsigned int, unsigned int>> static_cells_;
-        std::map<std::pair<unsigned int, unsigned int>, ros::Time> dynamic_cells_;
+        std::map<std::pair<unsigned int, unsigned int>, std::pair<ros::Time, double>> dynamic_cells_;
 
         double robot_x_, robot_y_;
         laser_geometry::LaserProjection projector_;
